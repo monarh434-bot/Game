@@ -1,16 +1,108 @@
-html, body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; background: #111; color: white; }
-#game { width: 100vw; height: 100vh; display: block; }
-#overlay { position: fixed; inset: 0; pointer-events: none; }
-#joinBox, #hud, #chatBox, #controls, #topbar { pointer-events: auto; }
-#joinBox { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 8px; background: rgba(0,0,0,.45); }
-#joinBox input, #chatInput { padding: 10px; width: 220px; }
-#joinBox button, #sendBtn, #placeBtn, #removeBtn, #controls button { padding: 10px 14px; }
-.hidden { display: none; }
-#topbar { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; align-items: center; }
-#chatBox { position: absolute; right: 10px; top: 10px; width: 260px; background: rgba(0,0,0,.5); padding: 8px; border-radius: 8px; }
-#log { height: 180px; overflow-y: auto; font-size: 13px; margin-bottom: 8px; }
-.chatRow { display: flex; gap: 6px; }
-#chatInput { flex: 1; width: auto; }
-#controls { position: absolute; left: 20px; bottom: 20px; display: grid; gap: 8px; }
-#controls .row { display: flex; gap: 8px; }
-#controls button { width: 56px; height: 56px; border-radius: 12px; opacity: .9; }
+html, body {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #111;
+  color: white;
+  font-family: Arial, sans-serif;
+  touch-action: none;
+  overscroll-behavior: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+body { position: fixed; inset: 0; }
+canvas {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  touch-action: none;
+  -webkit-touch-callout: none;
+}
+#overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+}
+#joinBox, #hud, #topbar, #chatBox, #controls {
+  pointer-events: auto;
+}
+.hidden, #joinBox.hidden, #hud.hidden {
+  display: none !important;
+}
+#joinBox {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  background: rgba(0,0,0,.45);
+  z-index: 50;
+}
+#joinBox input, #chatInput {
+  padding: 12px;
+  width: min(75vw, 280px);
+  border: 0;
+  border-radius: 12px;
+}
+button {
+  border: 0;
+  border-radius: 999px;
+}
+#joinBtn, #sendBtn, #placeBtn, #removeBtn {
+  padding: 12px 18px;
+}
+#topbar {
+  position: absolute;
+  top: max(10px, env(safe-area-inset-top));
+  left: 10px;
+  right: 10px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+#status {
+  background: rgba(0,0,0,.35);
+  padding: 8px 12px;
+  border-radius: 12px;
+}
+#chatBox {
+  position: absolute;
+  right: 10px;
+  top: 58px;
+  width: min(62vw, 300px);
+  background: rgba(0,0,0,.45);
+  padding: 8px;
+  border-radius: 14px;
+}
+#log {
+  height: 120px;
+  overflow-y: auto;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.chatRow {
+  display: flex;
+  gap: 6px;
+}
+#chatInput {
+  flex: 1;
+  width: auto;
+}
+#controls {
+  position: absolute;
+  left: 14px;
+  bottom: max(20px, env(safe-area-inset-bottom));
+  display: grid;
+  gap: 8px;
+}
+#controls .row {
+  display: flex;
+  gap: 8px;
+}
+#controls button {
+  width: 58px;
+  height: 58px;
+}

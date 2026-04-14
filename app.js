@@ -3,12 +3,13 @@ import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.m
 const canvas = document.getElementById('game');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x87ceeb);
 
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
-camera.position.set(0, 4, 8);
+const lookTarget = new THREE.Vector3(0, 1.5, 0);
 
 const light = new THREE.DirectionalLight(0xffffff, 1.2);
 light.position.set(6, 10, 4);
@@ -30,6 +31,14 @@ let mode = "place";
 let myPos = { x: 0, y: 2, z: 5 };
 let targetCursor = { x: 0, y: 1, z: 0 };
 
+let yaw = 0;
+let pitch = -0.35;
+let dragging = false;
+let dragStartX = 0;
+let dragStartY = 0;
+let touchMoved = false;
+const cameraDistance = 8;
+
 const cursor = new THREE.Mesh(
   new THREE.BoxGeometry(1.02, 1.02, 1.02),
   new THREE.MeshBasicMaterial({ color: 0xffff00, wireframe: true })
@@ -37,6 +46,7 @@ const cursor = new THREE.Mesh(
 scene.add(cursor);
 
 function key(x, y, z) { return `${x},${y},${z}`; }
+
 function addLog(msg) {
   const log = document.getElementById('log');
   const div = document.createElement('div');
@@ -44,13 +54,37 @@ function addLog(msg) {
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
 }
-function setStatus(msg) { document.getElementById('status').textContent = msg; }
+
+function setStatus(msg) {
+  document.getElementById('status').textContent = msg;
+}
+
+function updateCamera() {
+  const cosPitch = Math.cos(pitch);
+  camera.position.x = myPos.x + Math.sin(yaw) * cosPitch * cameraDistance;
+  camera.position.y = myPos.y + 2 + Math.sin(-pitch) * cameraDistance;
+  camera.position.z = myPos.z + Math.cos(yaw) * cosPitch * cameraDistance;
+  lookTarget.set(myPos.x, myPos.y, myPos.z);
+  camera.lookAt(lookTarget);
+
+  const fx = Math.sin(yaw);
+  const fz = Math.cos(yaw);
+  targetCursor = {
+    x: Math.round(myPos.x - fx * 2),
+    y: 1,
+    z: Math.round(myPos.z - fz * 2)
+  };
+  cursor.position.set(targetCursor.x, targetCursor.y, targetCursor.z);
+}
 
 function setBlock(x, y, z, blockType) {
   const k = key(x, y, z);
   const old = blocks.get(k);
-  if (old) { scene.remove(old); blocks.delete(k); }
-  if (blockType === "air") return;
+  if (old) {
+    scene.remove(old);
+    blocks.delete(k);
+  }
+  if (blockType === 'air') return;
   const mesh = new THREE.Mesh(blockGeo, materials[blockType] || materials.grass);
   mesh.position.set(x, y, z);
   scene.add(mesh);
@@ -97,26 +131,27 @@ function connect(nickname) {
       addLog(`AI: ${data.message}`);
     }
   };
-  socket.onclose = () => setStatus('Disconnected');
 }
 
-function move(dx, dz) {
-  myPos.x += dx;
-  myPos.z += dz;
-  camera.position.x = myPos.x;
-  camera.position.z = myPos.z + 8;
-  camera.lookAt(myPos.x, 0, myPos.z);
-  targetCursor = { x: Math.round(myPos.x), y: 1, z: Math.round(myPos.z - 2) };
-  cursor.position.set(targetCursor.x, targetCursor.y, targetCursor.z);
+function sendMove() {
   if (socket?.readyState === WebSocket.OPEN) {
     socket.send(JSON.stringify({ type: 'move', x: myPos.x, y: myPos.y, z: myPos.z }));
   }
 }
 
+function moveRelative(forward, strafe) {
+  const sin = Math.sin(yaw);
+  const cos = Math.cos(yaw);
+  myPos.x += sin * forward + cos * strafe;
+  myPos.z += cos * forward - sin * strafe;
+  updateCamera();
+  sendMove();
+}
+
 async function postBlock(blockType) {
   await fetch('/api/block', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...targetCursor, block_type: blockType })
   });
   setBlock(targetCursor.x, targetCursor.y, targetCursor.z, blockType);
@@ -130,6 +165,7 @@ function animate() {
   renderer.render(scene, camera);
 }
 animate();
+updateCamera();
 
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight);
@@ -137,22 +173,30 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
 });
 
+['gesturestart', 'gesturechange', 'gestureend'].forEach(name => {
+  document.addEventListener(name, e => e.preventDefault(), { passive: false });
+});
+document.addEventListener('touchmove', e => {
+  if (e.scale && e.scale !== 1) e.preventDefault();
+}, { passive: false });
+
 document.getElementById('joinBtn').onclick = async () => {
   const nickname = document.getElementById('nickname').value.trim() || 'Builder';
   await fetch('/api/join', {
     method: 'POST',
-    headers: {'Content-Type': 'application/json'},
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ nickname })
   });
   document.getElementById('joinBox').classList.add('hidden');
   document.getElementById('hud').classList.remove('hidden');
   await loadWorld();
   connect(nickname);
-  move(0, 0);
+  updateCamera();
 };
 
 document.getElementById('placeBtn').onclick = () => mode = 'place';
 document.getElementById('removeBtn').onclick = () => mode = 'remove';
+
 document.getElementById('sendBtn').onclick = () => {
   const input = document.getElementById('chatInput');
   const message = input.value.trim();
@@ -166,13 +210,37 @@ document.getElementById('sendBtn').onclick = () => {
 document.querySelectorAll('#controls button[data-move]').forEach(btn => {
   btn.addEventListener('click', () => {
     const dir = btn.dataset.move;
-    if (dir === 'forward') move(0, -1);
-    if (dir === 'back') move(0, 1);
-    if (dir === 'left') move(-1, 0);
-    if (dir === 'right') move(1, 0);
+    if (dir === 'forward') moveRelative(-1, 0);
+    if (dir === 'back') moveRelative(1, 0);
+    if (dir === 'left') moveRelative(0, -1);
+    if (dir === 'right') moveRelative(0, 1);
   });
 });
 
+canvas.addEventListener('pointerdown', e => {
+  dragging = true;
+  touchMoved = false;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  const dx = e.clientX - dragStartX;
+  const dy = e.clientY - dragStartY;
+  if (Math.abs(dx) > 2 || Math.abs(dy) > 2) touchMoved = true;
+  dragStartX = e.clientX;
+  dragStartY = e.clientY;
+  yaw -= dx * 0.01;
+  pitch -= dy * 0.01;
+  pitch = Math.max(-1.2, Math.min(0.8, pitch));
+  updateCamera();
+});
+
+canvas.addEventListener('pointerup', () => { dragging = false; });
+canvas.addEventListener('pointercancel', () => { dragging = false; });
+
 canvas.addEventListener('click', async () => {
+  if (touchMoved) return;
   await postBlock(mode === 'place' ? 'wood' : 'air');
 });
