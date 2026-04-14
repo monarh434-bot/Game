@@ -1,0 +1,16 @@
+html, body { margin: 0; padding: 0; overflow: hidden; font-family: Arial, sans-serif; background: #111; color: white; }
+#game { width: 100vw; height: 100vh; display: block; }
+#overlay { position: fixed; inset: 0; pointer-events: none; }
+#joinBox, #hud, #chatBox, #controls, #topbar { pointer-events: auto; }
+#joinBox { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 8px; background: rgba(0,0,0,.45); }
+#joinBox input, #chatInput { padding: 10px; width: 220px; }
+#joinBox button, #sendBtn, #placeBtn, #removeBtn, #controls button { padding: 10px 14px; }
+.hidden { display: none; }
+#topbar { position: absolute; top: 10px; left: 10px; display: flex; gap: 8px; align-items: center; }
+#chatBox { position: absolute; right: 10px; top: 10px; width: 260px; background: rgba(0,0,0,.5); padding: 8px; border-radius: 8px; }
+#log { height: 180px; overflow-y: auto; font-size: 13px; margin-bottom: 8px; }
+.chatRow { display: flex; gap: 6px; }
+#chatInput { flex: 1; width: auto; }
+#controls { position: absolute; left: 20px; bottom: 20px; display: grid; gap: 8px; }
+#controls .row { display: flex; gap: 8px; }
+#controls button { width: 56px; height: 56px; border-radius: 12px; opacity: .9; }

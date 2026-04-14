@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Voxel AI World</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <div id="overlay">
+    <div id="joinBox">
+      <h1>Voxel AI World</h1>
+      <input id="nickname" placeholder="Nickname" value="Builder" />
+      <button id="joinBtn">Join World</button>
+      <p>Touch-friendly sandbox MVP with simple world AI.</p>
+    </div>
+    <div id="hud" class="hidden">
+      <div id="topbar">
+        <span id="status">Connecting...</span>
+        <button id="placeBtn">Place</button>
+        <button id="removeBtn">Remove</button>
+      </div>
+      <div id="chatBox">
+        <div id="log"></div>
+        <div class="chatRow">
+          <input id="chatInput" placeholder="Say something to the world..." />
+          <button id="sendBtn">Send</button>
+        </div>
+      </div>
+      <div id="controls">
+        <button data-move="forward">↑</button>
+        <div class="row">
+          <button data-move="left">←</button>
+          <button data-move="back">↓</button>
+          <button data-move="right">→</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <canvas id="game"></canvas>
+  <script type="module" src="/static/app.js"></script>
+</body>
+</html>
